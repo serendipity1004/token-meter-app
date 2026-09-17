@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Token Meter · Claude Code와 Codex 사용량 메뉴바 앱</title>
+<meta name="description" content="Claude Code와 Codex의 남은 한도와 토큰 사용량을 macOS 메뉴바에서 확인하세요. 로컬에서만 동작하고, 대화 내용은 전송하지 않아요." />
+<meta property="og:title" content="Token Meter" />
+<meta property="og:description" content="Claude Code와 Codex 한도를 메뉴바에서 한눈에" />
+<meta property="og:image" content="popover.png" />
+<link rel="icon" href="icon.png" />
+<style>
+  :root {
+    color-scheme: light dark;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --hairline: #e1e0d9;
+    --border: rgba(11, 11, 11, .1);
+    --accent: #eb6834;
+    --codex: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #fff;
+      --ink-2: #c3c2b7;
+      --hairline: #2c2c2a;
+      --border: rgba(255, 255, 255, .1);
+      --accent: #d95926;
+      --codex: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--page);
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 64px 0 40px; text-align: center; }
+  .logo { width: 72px; height: 72px; border-radius: 18px; }
+  h1 { font-size: 40px; letter-spacing: -.02em; margin: 18px 0 6px; }
+  .tagline { font-size: 18px; color: var(--ink-2); margin: 0; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 28px 0 10px; }
+  .btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--page);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .btn.secondary { background: transparent; color: var(--ink-2); border: 1px solid var(--border); }
+  .meta { color: var(--muted); font-size: 13px; }
+  .shot {
+    display: block;
+    margin: 36px auto;
+    max-width: 380px;
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+  }
+  .menubar-shot { max-width: 420px; border-radius: 8px; box-shadow: none; margin: 0 auto 8px; }
+  section { padding: 30px 0; border-top: 1px solid var(--hairline); }
+  h2 { font-size: 22px; margin: 0 0 14px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .card h3 { margin: 0 0 6px; font-size: 15px; }
+  .card p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  ol, ul { color: var(--ink-2); padding-left: 20px; }
+  li { margin: 6px 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+  .note { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 16px; color: var(--ink-2); font-size: 14px; }
+  footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; text-align: center; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="icon.png" alt="" />
+    <h1>Token Meter</h1>
+    <p class="tagline">Claude Code와 Codex의 한도·토큰 사용량을 macOS 메뉴바에서</p>
+    <div class="cta">
+      <a class="btn" id="download" href="https://github.com/serendipity1004/token-meter-app/releases/latest">macOS용 다운로드</a>
+      <a class="btn secondary" href="#install">설치 방법</a>
+    </div>
+    <p class="meta" id="release-meta">Apple Silicon · Intel 공용 · macOS 12 이상</p>
+    <img class="shot menubar-shot" src="menubar.png" alt="메뉴바에 C 94% · X 25%로 표시된 모습" />
+    <img class="shot" src="popover.png" alt="Claude와 Codex의 한도 사용량과 토큰 사용량을 보여주는 팝오버" />
+  </header>
+
+  <section>
+    <h2>무엇을 보여주나요</h2>
+    <div class="features">
+      <div class="card">
+        <h3>메뉴바에 한도</h3>
+        <p>도구별로 가장 많이 쓴 한도를 <code>C 94% · X 25%</code>처럼 항상 띄워요. Claude와 Codex 공식 기준인 사용량(%)으로 표시해요.</p>
+      </div>
+      <div class="card">
+        <h3>한도 상세</h3>
+        <p>Claude는 5시간·주간·모델별(Fable 등) 한도를, Codex는 계정 기준 한도를 보여줘요. 리셋까지 남은 시간도 함께요.</p>
+      </div>
+      <div class="card">
+        <h3>토큰 사용량</h3>
+        <p>오늘 쓴 새 토큰과 캐시 읽기를 나눠서 보여주고, 최근 7일 추이와 모델별 사용량도 확인할 수 있어요.</p>
+      </div>
+      <div class="card">
+        <h3>상태줄 연동</h3>
+        <p>Claude Code 상태줄에 남은 한도를 막대로 표시해요. 켜고 끄는 건 메뉴바 우클릭 한 번이면 돼요.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>설치</h2>
+    <ol>
+      <li>위 버튼으로 <code>.dmg</code>를 받아 <strong>Token Meter</strong>를 응용 프로그램 폴더로 옮겨요.</li>
+      <li><strong>처음 실행할 때는 앱을 우클릭해서 "열기"를 선택하세요.</strong> 그다음 나오는 창에서 "열기"를 한 번 더 누르면 돼요.</li>
+      <li>메뉴바에 게이지 아이콘이 나타나면 끝이에요. 클릭하면 상세 화면이 열려요.</li>
+    </ol>
+    <div class="note">
+      <strong>왜 우클릭이 필요한가요?</strong> 이 앱은 Apple 개발자 서명을 받지 않아서, macOS가 처음 실행할 때 확인을 요구해요.
+      그냥 더블클릭하면 "확인되지 않은 개발자" 경고가 뜨고 열리지 않아요. 우클릭 → 열기로 한 번만 허용하면 이후에는 그냥 실행돼요.
+      터미널이 편하면 <code>xattr -dr com.apple.quarantine "/Applications/Token Meter.app"</code>를 써도 돼요.
+    </div>
+  </section>
+
+  <section>
+    <h2>어떻게 측정하나요</h2>
+    <ul>
+      <li><strong>토큰 수</strong>는 두 CLI가 남기는 로컬 로그에서 읽어요. <code>~/.claude/projects</code>와 <code>~/.codex/sessions</code>예요.</li>
+      <li><strong>Claude 한도</strong>는 Claude Code가 저장한 로그인으로 사용량 API를 조회하거나, 상태줄이 넘겨주는 값을 사용해요.</li>
+      <li><strong>Codex 한도</strong>는 설치된 Codex CLI에 계정 한도를 물어봐요. 다른 기기에서 쓴 양도 함께 반영돼요.</li>
+      <li>조회는 15분마다, 그리고 창을 열거나 새로고침할 때 이뤄져요.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>개인정보</h2>
+    <ul>
+      <li>대화 내용, 코드, 로그인 토큰은 <strong>어디에도 전송하지 않아요.</strong></li>
+      <li>네트워크 요청은 한도 조회 두 가지뿐이에요. Anthropic과 OpenAI의 사용량 엔드포인트로만 나가요.</li>
+      <li>수집·분석 도구가 없어요. 모든 집계는 이 컴퓨터 안에서 이뤄져요.</li>
+    </ul>
+    <div class="note">
+      Token Meter는 <strong>비공식 도구</strong>예요. Anthropic이나 OpenAI와 아무 관계가 없고, 두 회사가 만들거나 보증하지 않았어요.
+      한도 조회에는 공식 문서에 없는 내부 엔드포인트를 사용해서, 각 서비스가 형식을 바꾸면 값이 표시되지 않을 수 있어요.
+      그럴 때도 로컬 로그 기반 토큰 사용량은 계속 동작해요.
+    </div>
+  </section>
+
+  <footer>
+    <p>Windows 지원은 준비 중이에요.</p>
+    <p>문의나 버그 제보는 <a href="https://github.com/serendipity1004/token-meter-app/issues">GitHub Issues</a>로 보내주세요.</p>
+  </footer>
+</div>
+
+<script>
+  // Shows the version and links straight to the .dmg of the newest release.
+  fetch("https://api.github.com/repos/serendipity1004/token-meter-app/releases/latest")
+    .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    .then((release) => {
+      const dmg = (release.assets || []).find((a) => a.name.endsWith(".dmg"));
+      if (dmg) document.getElementById("download").href = dmg.browser_download_url;
+      const date = new Date(release.published_at).toLocaleDateString("ko-KR");
+      document.getElementById("release-meta").textContent =
+        `${release.tag_name} · ${date} · Apple Silicon · Intel 공용 · macOS 12 이상`;
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
